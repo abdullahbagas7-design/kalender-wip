@@ -168,7 +168,7 @@ const BottomSheet = ({
                           {order.invitation_type && (
                             <p className="text-xs text-zinc-500 mt-1">{order.invitation_type}</p>
                           )}
-                          {order.quantity > 1 && (
+                          {(order.quantity ?? 1) > 1 && (
                             <p className="text-xs text-zinc-500">x{order.quantity}</p>
                           )}
                         </div>
