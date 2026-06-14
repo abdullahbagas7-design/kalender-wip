@@ -328,18 +328,13 @@ export default function Home() {
       </div>
 
       {/* Printable Schedule Table */}
-      <div className="hidden print:block w-full p-8 bg-white">
-        <div className="bg-[#34C759] text-white p-4 text-center mb-6">
-          <h1 className="text-2xl font-bold uppercase">
-            {format(currentMonth, "MMMM yyyy", { locale: id })}
-          </h1>
-        </div>
-
-        <table className="w-full border-collapse border border-zinc-300">
+      <div className="hidden print:block w-full p-4 bg-white print:p-1 print:text-[11px]">
+        <table className="w-full border-collapse border border-black print:border-collapse">
           <thead>
             <tr>
-              <th className="border border-zinc-300 p-2 text-left bg-zinc-100 w-16">Tgl</th>
-              <th className="border border-zinc-300 p-2 text-left bg-zinc-100">Daftar Pesanan</th>
+              <th colSpan={100} className="border border-black bg-green-600 text-white font-bold text-center p-2 print:p-1">
+                {format(currentMonth, "MMMM yyyy", { locale: id }).toUpperCase()}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -352,17 +347,24 @@ export default function Home() {
               const isSunday = getDay(day) === 0;
 
               return (
-                <tr key={dateStr} className={isSunday ? "bg-red-50" : ""}>
-                  <td className={`border border-zinc-300 p-2 text-center font-bold ${isSunday ? "text-red-600" : "text-zinc-800"}`}>
+                <tr key={dateStr} className={isSunday ? "bg-red-600 text-white font-bold" : ""}>
+                  <td className={`border border-black text-center font-bold p-1 print:p-0.5 w-8 ${isSunday ? "bg-red-600 text-white" : "bg-white text-black"}`}>
                     {format(day, "d")}
                   </td>
-                  <td className="border border-zinc-300 p-2">
-                    <div className="flex flex-wrap gap-2">
-                      {dayOrders.map((order) => (
-                        <div key={order.id} className="text-sm">
-                          {order.client_name} ({order.quantity ?? 1})
-                        </div>
-                      ))}
+                  <td className="border border-black p-1 print:p-0.5">
+                    <div className={`flex ${isSunday ? "text-white" : "text-black"}`}>
+                      {dayOrders.length > 0 ? (
+                        dayOrders.map((order, index) => (
+                          <span 
+                            key={order.id} 
+                            className={`flex-1 ${index < dayOrders.length - 1 ? "border-r border-black pr-1" : ""}`}
+                          >
+                            {order.client_name} ({order.quantity ?? 1})
+                          </span>
+                        ))
+                      ) : (
+                        <span>&nbsp;</span>
+                      )}
                     </div>
                   </td>
                 </tr>
