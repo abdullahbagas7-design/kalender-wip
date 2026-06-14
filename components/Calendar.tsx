@@ -23,13 +23,20 @@ interface CalendarProps {
   onDateSelect: (date: Date) => void;
   orders: Order[];
   maxCapacity: number;
+  currentMonth: Date;
+  onMonthChange: (date: Date) => void;
 }
 
-const Calendar = ({ selectedDate, onDateSelect, orders, maxCapacity }: CalendarProps) => {
-  const [currentMonth, setCurrentMonth] = useState(new Date(2026, 5, 12)); // Today's date per env
-
-  const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
-  const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+const Calendar = ({ 
+  selectedDate, 
+  onDateSelect, 
+  orders, 
+  maxCapacity,
+  currentMonth,
+  onMonthChange
+}: CalendarProps) => {
+  const nextMonth = () => onMonthChange(addMonths(currentMonth, 1));
+  const prevMonth = () => onMonthChange(subMonths(currentMonth, 1));
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(monthStart);

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { format, parseISO } from "date-fns";
-import { Search, X, ChevronLeft } from "lucide-react";
+import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from "date-fns";
+import { Search, X, ChevronLeft, Printer } from "lucide-react";
 import Calendar from "@/components/Calendar";
 import BottomSheet from "@/components/BottomSheet";
 import Navigation from "@/components/Navigation";
@@ -27,6 +27,7 @@ export default function Home() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [sheetInitialMode, setSheetInitialMode] = useState<"list" | "date-picker">("list");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date(2026, 5, 12));
   const [orders, setOrders] = useState<Order[]>([]);
   const [maxCapacity, setMaxCapacity] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
@@ -154,14 +155,14 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-50 pb-32 relative overflow-hidden">
+    <main className="min-h-screen bg-zinc-50 pb-32 relative overflow-hidden print:bg-white print:pb-0 print:overflow-visible">
       {/* Background Blobs */}
-      <div className="blob blob-1" />
-      <div className="blob blob-2" />
+      <div className="blob blob-1 print:hidden" />
+      <div className="blob blob-2 print:hidden" />
 
       {/* Error Toast */}
       {error && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 glass px-6 py-3 rounded-2xl flex items-center gap-3 shadow-lg">
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 glass px-6 py-3 rounded-2xl flex items-center gap-3 shadow-lg print:hidden">
           <p className="text-red-600 font-medium">{error}</p>
           <button onClick={() => setError(null)} className="text-zinc-500 hover:text-zinc-700">
             <X className="w-4 h-4" />
@@ -170,7 +171,7 @@ export default function Home() {
       )}
 
       {/* Header Section */}
-      <div className="relative z-10 px-6 pt-14 pb-6">
+      <div className="relative z-10 px-6 pt-14 pb-6 print:hidden">
         <div className="max-w-md mx-auto">
           {currentView === "search" ? (
             <div className="flex items-center gap-3 mb-4">
@@ -188,12 +189,20 @@ export default function Home() {
                 {currentView === "home" ? "Jadwal Undangan" : "Pengaturan"}
               </h1>
               {currentView === "home" && (
-                <button
-                  onClick={() => setCurrentView("search")}
-                  className="p-3 hover:bg-white/30 rounded-2xl glass transition-all"
-                >
-                  <Search className="w-6 h-6 text-zinc-700" />
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => window.print()}
+                    className="p-3 hover:bg-white/30 rounded-2xl glass transition-all print:hidden"
+                  >
+                    <Printer className="w-6 h-6 text-zinc-700" />
+                  </button>
+                  <button
+                    onClick={() => setCurrentView("search")}
+                    className="p-3 hover:bg-white/30 rounded-2xl glass transition-all print:hidden"
+                  >
+                    <Search className="w-6 h-6 text-zinc-700" />
+                  </button>
+                </div>
               )}
             </div>
           )}
@@ -256,16 +265,18 @@ export default function Home() {
             )}
           </div>
         ) : currentView === "home" ? (
-          <div className="max-w-md mx-auto">
+          <div className="max-w-md mx-auto print:hidden">
             <Calendar 
               selectedDate={selectedDate}
               onDateSelect={handleDateSelect}
               orders={orders}
               maxCapacity={maxCapacity}
+              currentMonth={currentMonth}
+              onMonthChange={setCurrentMonth}
             />
             
             {/* Legend */}
-            <div className="mt-10 glass p-6 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+            <div className="mt-10 glass p-6 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] print:hidden">
               <h3 className="text-sm font-semibold text-zinc-900 mb-4">Indikator Kapasitas</h3>
               <div className="grid grid-cols-1 gap-4">
                 <div className="flex items-center gap-4">
@@ -293,24 +304,73 @@ export default function Home() {
       </div>
 
       {/* Bottom Navigation */}
-      <Navigation 
-        currentView={currentView === "search" ? "home" : currentView}
-        onViewChange={(view) => setCurrentView(view as View)}
-        onAddClick={handleAddClick}
-      />
+      <div className="print:hidden">
+        <Navigation 
+          currentView={currentView === "search" ? "home" : currentView}
+          onViewChange={(view) => setCurrentView(view as View)}
+          onAddClick={handleAddClick}
+        />
+      </div>
 
       {/* Bottom Sheet */}
-      <BottomSheet 
-        isOpen={isSheetOpen}
-        onClose={() => setIsSheetOpen(false)}
-        selectedDate={selectedDate}
-        orders={orders}
-        onAddOrder={handleAddOrder}
-        onEditOrder={handleEditOrder}
-        onDeleteOrder={handleDeleteOrder}
-        onSetSelectedDate={setSelectedDate}
-        initialMode={sheetInitialMode}
-      />
+      <div className="print:hidden">
+        <BottomSheet 
+          isOpen={isSheetOpen}
+          onClose={() => setIsSheetOpen(false)}
+          selectedDate={selectedDate}
+          orders={orders}
+          onAddOrder={handleAddOrder}
+          onEditOrder={handleEditOrder}
+          onDeleteOrder={handleDeleteOrder}
+          onSetSelectedDate={setSelectedDate}
+          initialMode={sheetInitialMode}
+        />
+      </div>
+
+      {/* Printable Schedule Table */}
+      <div className="hidden print:block w-full p-8 bg-white">
+        <div className="bg-[#34C759] text-white p-4 text-center mb-6">
+          <h1 className="text-2xl font-bold uppercase">
+            {format(currentMonth, "MMMM yyyy", { locale: id })}
+          </h1>
+        </div>
+
+        <table className="w-full border-collapse border border-zinc-300">
+          <thead>
+            <tr>
+              <th className="border border-zinc-300 p-2 text-left bg-zinc-100 w-16">Tgl</th>
+              <th className="border border-zinc-300 p-2 text-left bg-zinc-100">Daftar Pesanan</th>
+            </tr>
+          </thead>
+          <tbody>
+            {eachDayOfInterval({
+              start: startOfMonth(currentMonth),
+              end: endOfMonth(currentMonth),
+            }).map((day) => {
+              const dateStr = format(day, "yyyy-MM-dd");
+              const dayOrders = orders.filter((o) => o.order_date === dateStr);
+              const isSunday = getDay(day) === 0;
+
+              return (
+                <tr key={dateStr} className={isSunday ? "bg-red-50" : ""}>
+                  <td className={`border border-zinc-300 p-2 text-center font-bold ${isSunday ? "text-red-600" : "text-zinc-800"}`}>
+                    {format(day, "d")}
+                  </td>
+                  <td className="border border-zinc-300 p-2">
+                    <div className="flex flex-wrap gap-2">
+                      {dayOrders.map((order) => (
+                        <div key={order.id} className="text-sm">
+                          {order.client_name} ({order.quantity ?? 1})
+                        </div>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </main>
   );
 }
