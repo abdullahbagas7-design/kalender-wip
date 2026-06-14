@@ -329,49 +329,66 @@ export default function Home() {
 
       {/* Printable Schedule Table */}
       <div className="hidden print:block w-full p-4 bg-white print:p-1 print:text-[11px]">
-        <table className="w-full border-collapse border border-black print:border-collapse">
-          <thead>
-            <tr>
-              <th colSpan={100} className="border border-black bg-green-600 text-white font-bold text-center p-2 print:p-1">
-                {format(currentMonth, "MMMM yyyy", { locale: id }).toUpperCase()}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {eachDayOfInterval({
-              start: startOfMonth(currentMonth),
-              end: endOfMonth(currentMonth),
-            }).map((day) => {
-              const dateStr = format(day, "yyyy-MM-dd");
-              const dayOrders = orders.filter((o) => o.order_date === dateStr);
-              const isSunday = getDay(day) === 0;
+        {(() => {
+          const daysInMonth = eachDayOfInterval({
+            start: startOfMonth(currentMonth),
+            end: endOfMonth(currentMonth),
+          });
+          
+          // Hitung jumlah orderan maksimal dalam satu hari di bulan ini
+          const maxOrdersInADay = Math.max(
+            ...daysInMonth.map(day => 
+              orders.filter(o => o.order_date === format(day, "yyyy-MM-dd")).length
+            ),
+            1 // Minimal 1 kolom order
+          );
 
-              return (
-                <tr key={dateStr} className={isSunday ? "bg-red-600 text-white font-bold" : ""}>
-                  <td className={`border border-black text-center font-bold p-1 print:p-0.5 w-8 ${isSunday ? "bg-red-600 text-white" : "bg-white text-black"}`}>
-                    {format(day, "d")}
-                  </td>
-                  <td className="border border-black p-1 print:p-0.5">
-                    <div className={`flex ${isSunday ? "text-white" : "text-black"}`}>
-                      {dayOrders.length > 0 ? (
-                        dayOrders.map((order, index) => (
-                          <span 
-                            key={order.id} 
-                            className={`flex-1 ${index < dayOrders.length - 1 ? "border-r border-black pr-1" : ""}`}
-                          >
-                            {order.client_name} ({order.quantity ?? 1})
-                          </span>
-                        ))
-                      ) : (
-                        <span>&nbsp;</span>
-                      )}
-                    </div>
-                  </td>
+          return (
+            <table className="w-full border-collapse border border-black print:border-collapse table-fixed">
+              <thead>
+                <tr>
+                  <th 
+                    colSpan={maxOrdersInADay + 1} 
+                    className="border border-black bg-green-600 text-white font-bold text-center p-2 print:p-1"
+                  >
+                    {format(currentMonth, "MMMM yyyy", { locale: id }).toUpperCase()}
+                  </th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {daysInMonth.map((day) => {
+                  const dateStr = format(day, "yyyy-MM-dd");
+                  const dayOrders = orders.filter((o) => o.order_date === dateStr);
+                  const isSunday = getDay(day) === 0;
+
+                  return (
+                    <tr key={dateStr} className={isSunday ? "bg-red-600 text-white font-bold" : ""}>
+                      <td className={`border border-black text-center font-bold p-1 print:p-0.5 w-8 ${isSunday ? "bg-red-600 text-white" : "bg-white text-black"}`}>
+                        {format(day, "d")}
+                      </td>
+                      {/* Render kolom-kolom order secara dinamis */}
+                      {Array.from({ length: maxOrdersInADay }).map((_, index) => {
+                        const order = dayOrders[index];
+                        return (
+                          <td 
+                            key={index} 
+                            className={`border border-black p-1 print:p-0.5 overflow-hidden whitespace-nowrap text-ellipsis ${isSunday ? "text-white" : "text-black"}`}
+                          >
+                            {order ? (
+                              `${order.client_name} (${order.quantity ?? 1})`
+                            ) : (
+                              <span>&nbsp;</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          );
+        })()}
       </div>
     </main>
   );
