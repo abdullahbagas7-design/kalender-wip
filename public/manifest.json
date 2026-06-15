@@ -1,12 +1,12 @@
 {
-  "name": "Kalender Undangan",
-  "short_name": "Kalender",
-  "description": "Aplikasi manajemen jadwal undangan dengan kapasitas harian",
+  "name": "WIP Kalender",
+  "short_name": "WIP Kalender",
+  "description": "Aplikasi manajemen jadwal dengan kapasitas harian",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#fafafa",
   "theme_color": "#3b82f6",
-  "orientation": "portrait",
+  "orientation": "any",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",

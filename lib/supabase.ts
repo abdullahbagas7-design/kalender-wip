@@ -21,6 +21,8 @@ export interface Order {
 export interface Settings {
   id: number;
   max_capacity: number;
+  is_auto_rotate: boolean;
+  rotate_interval: number;
   updated_at: string;
 }
 
@@ -121,15 +123,21 @@ export const fetchSettings = async (): Promise<Settings> => {
   } catch (error) {
     console.error("Error fetching settings:", error);
     // Fallback to default if settings not found
-    return { id: 1, max_capacity: 10, updated_at: new Date().toISOString() };
+    return { 
+      id: 1, 
+      max_capacity: 10, 
+      is_auto_rotate: false, 
+      rotate_interval: 10, 
+      updated_at: new Date().toISOString() 
+    };
   }
 };
 
-export const updateMaxCapacity = async (newCapacity: number): Promise<Settings> => {
+export const updateSettings = async (updates: Partial<Omit<Settings, "id" | "updated_at">>): Promise<Settings> => {
   try {
     const { data, error } = await supabase
       .from("settings")
-      .update({ max_capacity: newCapacity, updated_at: new Date().toISOString() })
+      .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", 1)
       .select()
       .single();
@@ -137,7 +145,11 @@ export const updateMaxCapacity = async (newCapacity: number): Promise<Settings> 
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error("Error updating max capacity:", error);
+    console.error("Error updating settings:", error);
     throw error;
   }
+};
+
+export const updateMaxCapacity = async (newCapacity: number): Promise<Settings> => {
+  return updateSettings({ max_capacity: newCapacity });
 };

@@ -1,15 +1,27 @@
 "use client";
 
 import React from "react";
-import { Settings2, Trash2, AlertCircle } from "lucide-react";
+import { Settings2, Trash2, AlertCircle, RefreshCw, Clock } from "lucide-react";
 
 interface SettingsSheetProps {
   maxCapacity: number;
   onCapacityChange: (newCapacity: number) => void;
+  isAutoRotate: boolean;
+  onAutoRotateChange: (autoRotate: boolean) => void;
+  rotateInterval: number;
+  onRotateIntervalChange: (interval: number) => void;
   onClearOldData: () => void;
 }
 
-const SettingsSheet = ({ maxCapacity, onCapacityChange, onClearOldData }: SettingsSheetProps) => {
+const SettingsSheet = ({ 
+  maxCapacity, 
+  onCapacityChange, 
+  isAutoRotate,
+  onAutoRotateChange,
+  rotateInterval,
+  onRotateIntervalChange,
+  onClearOldData 
+}: SettingsSheetProps) => {
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
       {/* Header */}
@@ -52,6 +64,52 @@ const SettingsSheet = ({ maxCapacity, onCapacityChange, onClearOldData }: Settin
             +
           </button>
         </div>
+      </div>
+
+      {/* Auto Rotate Setting */}
+      <div className="glass rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 glass rounded-2xl flex items-center justify-center">
+              <RefreshCw className={`w-6 h-6 ${isAutoRotate ? "text-blue-500 animate-spin-slow" : "text-zinc-400"}`} />
+            </div>
+            <div>
+              <h3 className="font-semibold text-zinc-900">Rotasi Otomatis</h3>
+              <p className="text-sm text-zinc-600">Pindah bulan otomatis</p>
+            </div>
+          </div>
+          <button
+            onClick={() => onAutoRotateChange(!isAutoRotate)}
+            className={`w-14 h-8 rounded-full transition-all duration-300 relative ${
+              isAutoRotate ? "bg-blue-500" : "bg-zinc-300"
+            }`}
+          >
+            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 ${
+              isAutoRotate ? "left-7" : "left-1"
+            }`} />
+          </button>
+        </div>
+
+        {isAutoRotate && (
+          <div className="space-y-4 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Clock className="w-5 h-5 text-zinc-500" />
+                <span className="text-sm font-medium text-zinc-700">Interval Rotasi</span>
+              </div>
+              <span className="text-lg font-bold text-zinc-900">{rotateInterval} detik</span>
+            </div>
+            <input
+              type="range"
+              min="5"
+              max="60"
+              step="5"
+              value={rotateInterval}
+              onChange={(e) => onRotateIntervalChange(parseInt(e.target.value))}
+              className="w-full h-2 bg-white/40 rounded-full appearance-none cursor-pointer accent-blue-500"
+            />
+          </div>
+        )}
       </div>
 
       {/* Clear Old Data */}

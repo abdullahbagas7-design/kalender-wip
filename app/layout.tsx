@@ -13,13 +13,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Kalender Undangan",
-  description: "Aplikasi manajemen jadwal undangan dengan kapasitas harian",
+  title: "WIP Kalender",
+  description: "Aplikasi manajemen jadwal dengan kapasitas harian",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Kalender Undangan",
+    title: "WIP Kalender",
   },
 };
 

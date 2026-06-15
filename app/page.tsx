@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from "date-fns";
-import { Search, X, ChevronLeft, Printer } from "lucide-react";
+import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths } from "date-fns";
+import { Search, X, ChevronLeft, Printer, RotateCw } from "lucide-react";
 import Calendar from "@/components/Calendar";
 import BottomSheet from "@/components/BottomSheet";
 import Navigation from "@/components/Navigation";
@@ -16,6 +16,7 @@ import {
   deleteOrder, 
   deleteOldOrders, 
   fetchSettings, 
+  updateSettings,
   updateMaxCapacity 
 } from "@/lib/supabase";
 import { id } from "date-fns/locale/id";
@@ -30,6 +31,8 @@ export default function Home() {
   const [currentMonth, setCurrentMonth] = useState(new Date(2026, 5, 12));
   const [orders, setOrders] = useState<Order[]>([]);
   const [maxCapacity, setMaxCapacity] = useState(10);
+  const [isAutoRotate, setIsAutoRotate] = useState(false);
+  const [rotateInterval, setRotateInterval] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +48,8 @@ export default function Home() {
       ]);
       setOrders(ordersData);
       setMaxCapacity(settingsData.max_capacity);
+      setIsAutoRotate(settingsData.is_auto_rotate);
+      setRotateInterval(settingsData.rotate_interval);
     } catch (err) {
       console.error("Failed to load data:", err);
       setError("Gagal memuat data. Silakan periksa koneksi internet Anda.");
@@ -56,6 +61,17 @@ export default function Home() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Auto-rotation logic
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isAutoRotate && currentView === "home") {
+      interval = setInterval(() => {
+        setCurrentMonth(prev => addMonths(prev, 1));
+      }, rotateInterval * 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isAutoRotate, rotateInterval, currentView]);
 
   // Date select handler
   const handleDateSelect = (date: Date) => {
@@ -111,11 +127,31 @@ export default function Home() {
 
   const handleUpdateMaxCapacity = async (newCapacity: number) => {
     try {
-      await updateMaxCapacity(newCapacity);
+      await updateSettings({ max_capacity: newCapacity });
       setMaxCapacity(newCapacity);
     } catch (err) {
       console.error("Failed to update max capacity:", err);
       alert("Gagal mengupdate kapasitas.");
+    }
+  };
+
+  const handleUpdateAutoRotate = async (autoRotate: boolean) => {
+    try {
+      await updateSettings({ is_auto_rotate: autoRotate });
+      setIsAutoRotate(autoRotate);
+    } catch (err) {
+      console.error("Failed to update auto rotate:", err);
+      alert("Gagal mengupdate pengaturan rotasi.");
+    }
+  };
+
+  const handleUpdateRotateInterval = async (interval: number) => {
+    try {
+      await updateSettings({ rotate_interval: interval });
+      setRotateInterval(interval);
+    } catch (err) {
+      console.error("Failed to update rotate interval:", err);
+      alert("Gagal mengupdate interval rotasi.");
     }
   };
 
@@ -171,8 +207,8 @@ export default function Home() {
       )}
 
       {/* Header Section */}
-      <div className="relative z-10 px-6 pt-14 pb-6 print:hidden">
-        <div className="max-w-md mx-auto">
+      <div className="relative z-10 px-6 pt-14 pb-6 landscape:pt-8 landscape:pb-3 print:hidden">
+        <div className="max-w-md mx-auto landscape:max-w-2xl">
           {currentView === "search" ? (
             <div className="flex items-center gap-3 mb-4">
               <button
@@ -185,11 +221,18 @@ export default function Home() {
             </div>
           ) : (
             <div className="flex items-center justify-between mb-2">
-              <h1 className="text-3xl font-bold text-zinc-900 tracking-tight">
-                {currentView === "home" ? "Jadwal Undangan" : "Pengaturan"}
+              <h1 className="text-3xl font-bold text-zinc-900 tracking-tight landscape:text-2xl">
+                {currentView === "home" ? "WIP Kalender" : "Pengaturan"}
               </h1>
               {currentView === "home" && (
                 <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentMonth(prev => addMonths(prev, 1))}
+                    className="p-3 hover:bg-white/30 rounded-2xl glass transition-all print:hidden"
+                    title="Rotasi Manual"
+                  >
+                    <RotateCw className="w-6 h-6 text-zinc-700" />
+                  </button>
                   <button
                     onClick={() => window.print()}
                     className="p-3 hover:bg-white/30 rounded-2xl glass transition-all print:hidden"
@@ -265,7 +308,7 @@ export default function Home() {
             )}
           </div>
         ) : currentView === "home" ? (
-          <div className="max-w-md mx-auto print:hidden">
+          <div className="max-w-md mx-auto landscape:max-w-2xl print:hidden">
             <Calendar 
               selectedDate={selectedDate}
               onDateSelect={handleDateSelect}
@@ -276,19 +319,25 @@ export default function Home() {
             />
             
             {/* Legend */}
-            <div className="mt-10 glass p-6 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] print:hidden">
-              <h3 className="text-sm font-semibold text-zinc-900 mb-4">Indikator Kapasitas</h3>
-              <div className="grid grid-cols-1 gap-4">
+            <div className="mt-10 landscape:mt-4 glass p-6 landscape:p-4 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] print:hidden">
+              <h3 className="text-sm font-semibold text-zinc-900 mb-4 landscape:mb-2">Indikator Kapasitas</h3>
+              <div className="grid grid-cols-1 landscape:grid-cols-3 gap-4 landscape:gap-3">
                 <div className="flex items-center gap-4">
-                  <div className="w-3.5 h-3.5 rounded-full shadow-[0_0_15px_rgba(52,199,89,0.6)]" style={{ backgroundColor: "#34C759" }} />
+                  <div className="relative w-8 h-8 flex items-center justify-center">
+                    <div className="absolute w-6 h-6 rounded-full bg-green-500/20" />
+                  </div>
                   <span className="text-sm text-zinc-700 font-medium">Kapasitas Longgar</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="w-3.5 h-3.5 rounded-full shadow-[0_0_15px_rgba(255,204,0,0.6)]" style={{ backgroundColor: "#FFCC00" }} />
+                  <div className="relative w-8 h-8 flex items-center justify-center">
+                    <div className="absolute w-8 h-8 rounded-full bg-orange-500/20" />
+                  </div>
                   <span className="text-sm text-zinc-700 font-medium">Hampir Penuh</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="w-3.5 h-3.5 rounded-full shadow-[0_0_15px_rgba(255,59,48,0.6)]" style={{ backgroundColor: "#FF3B30" }} />
+                  <div className="relative w-10 h-10 flex items-center justify-center">
+                    <div className="absolute w-10 h-10 rounded-full bg-red-500/20" />
+                  </div>
                   <span className="text-sm text-zinc-700 font-medium">Kapasitas Penuh</span>
                 </div>
               </div>
@@ -298,6 +347,10 @@ export default function Home() {
           <SettingsSheet 
             maxCapacity={maxCapacity}
             onCapacityChange={handleUpdateMaxCapacity}
+            isAutoRotate={isAutoRotate}
+            onAutoRotateChange={handleUpdateAutoRotate}
+            rotateInterval={rotateInterval}
+            onRotateIntervalChange={handleUpdateRotateInterval}
             onClearOldData={handleClearOldData}
           />
         )}
